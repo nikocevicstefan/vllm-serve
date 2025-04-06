@@ -1,41 +1,70 @@
-# vLLM Serve CLI
+# vLLM Serve
 
-[![PyPI version](https://badge.fury.io/py/vllm-serve-cli.svg)](https://badge.fury.io/py/vllm-serve-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A user-friendly command-line tool to easily serve LLM models with [vLLM](https://github.com/vllm-project/vllm).
+A user-friendly Bash script to easily serve LLM models with [vLLM](https://github.com/vllm-project/vllm).
 
 ## Features
 
-- 🎮 Interactive arrow-key navigation for selecting models and parameters
 - 🧠 Automatically discovers LLM models in your models directory
 - 🔧 Pre-configured parameter sets for common scenarios 
 - 💻 Simple interface to launch vLLM servers
 - 🚀 Supports all major vLLM configurations
 - 📝 Detailed command preview before execution
-
-![vLLM Serve CLI Demo](https://raw.githubusercontent.com/nikocevicstefan/vllm-serve-cli/main/docs/demo.gif)
-
-## Installation
-
-```bash
-pip install vllm-serve-cli
-```
+- 🔍 No dependencies other than Bash and vLLM itself!
 
 ## Requirements
 
-- Python 3.8+
-- vLLM
+- Bash shell (Linux or macOS)
+- vLLM already installed
 - CUDA-compatible GPU (for vLLM)
+
+## Installation
+
+### Option 1: One-line installer (Recommended)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/nikocevicstefan/vllm-serve/main/install.sh | bash
+```
+
+This will:
+1. Check if vLLM is installed
+2. Ask where you want to install the script (default: ~/.local/bin)
+3. Download the script and make it executable
+4. Offer to add the installation directory to your PATH if needed
+
+### Option 2: Manual Download
+
+```bash
+# Clone the repository
+git clone https://github.com/nikocevicstefan/vllm-serve.git
+cd vllm-serve
+
+# Make the script executable
+chmod +x vllm-serve.sh
+```
+
+Or just download the standalone script:
+
+```bash
+curl -o vllm-serve.sh https://raw.githubusercontent.com/nikocevicstefan/vllm-serve/main/vllm-serve.sh
+chmod +x vllm-serve.sh
+```
 
 ## Usage
 
 ### Quick Start
 
-Simply run the command to start the interactive interface:
+Simply run the script to start the interactive interface:
 
 ```bash
 vllm-serve
+```
+
+Or if you downloaded the script directly:
+
+```bash
+./vllm-serve.sh
 ```
 
 This will:
@@ -80,7 +109,7 @@ vllm-serve serve --model /path/to/your/model
 
 ### Configuration Presets
 
-The tool offers several presets to quickly configure parameters:
+The script offers several presets to quickly configure parameters:
 
 | Preset | Description |
 |--------|-------------|
@@ -119,7 +148,7 @@ Use one of these solutions:
 
 ## Contributing
 
-Contributions are welcome! Please check out our [contribution guidelines](CONTRIBUTING.md).
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
@@ -127,7 +156,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgements
 
-- [vLLM](https://github.com/vllm-project/vllm) for the amazing inference engine
-- [Questionary](https://github.com/tmbo/questionary) for the interactive CLI interface
-- [Click](https://click.palletsprojects.com/) for the command-line interface
-- [Rich](https://github.com/Textualize/rich) for beautiful terminal formatting 
+- [vLLM](https://github.com/vllm-project/vllm) for the amazing inference engine 
