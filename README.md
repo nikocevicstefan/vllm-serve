@@ -86,10 +86,12 @@ Or if you downloaded the script directly:
 ```
 
 This will:
-1. Scan your `~/models` directory for LLM models
-2. Present a menu to select one of the available models
-3. Offer configuration presets or custom configuration
-4. Launch the vLLM server with your selected settings
+1. Present an interactive menu to choose an action (list models, serve a model, or show help).
+2. If "serve" is chosen:
+   - Scan your `~/models` directory for LLM models
+   - Present a menu to select one of the available models
+   - Offer configuration presets or custom configuration
+   - Launch the vLLM server with your selected settings
 
 ### Available Commands
 
@@ -108,6 +110,14 @@ vllm-serve serve
 ```
 
 Interactive process to configure and launch a vLLM server.
+
+#### Show help
+
+```bash
+vllm-serve help
+```
+
+Displays the help message with available commands and options.
 
 ### Configuration Options
 
