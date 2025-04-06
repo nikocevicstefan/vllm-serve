@@ -29,9 +29,18 @@ curl -sSL https://raw.githubusercontent.com/nikocevicstefan/vllm-serve/main/inst
 
 This will:
 1. Check if vLLM is installed
-2. Ask where you want to install the script (default: ~/.local/bin)
+2. Offer installation options:
+   - User installation (in ~/.local/bin)
+   - Global installation (in /usr/local/bin, requires sudo)
+   - Custom location
 3. Download the script and make it executable
-4. Offer to add the installation directory to your PATH if needed
+4. Add the installation directory to your PATH if needed
+
+For global installation (available to all users), you can run:
+
+```bash
+sudo curl -sSL https://raw.githubusercontent.com/nikocevicstefan/vllm-serve/main/install.sh | sudo bash
+```
 
 ### Option 2: Manual Download
 
@@ -55,7 +64,7 @@ chmod +x vllm-serve.sh
 
 ### Quick Start
 
-Simply run the script to start the interactive interface:
+If you've installed globally:
 
 ```bash
 vllm-serve
