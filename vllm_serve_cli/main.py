@@ -105,33 +105,8 @@ def build_vllm_command(model_path: str, config: Dict[str, Any]) -> List[str]:
     
     return cmd
 
-@click.group()
-def cli():
-    """vLLM Serve CLI - Easily serve LLM models with vLLM."""
-    pass
-
-@cli.command()
-@click.option("--models-dir", default=DEFAULT_MODELS_DIR, 
-              help=f"Directory containing model files (default: {DEFAULT_MODELS_DIR})")
-def list(models_dir):
-    """List available models in the models directory."""
-    models = find_models(models_dir)
-    
-    if not models:
-        console.print("[red]No models found in the specified directory.[/red]")
-        return
-    
-    console.print(f"[green]Found {len(models)} models in {models_dir}:[/green]")
-    for i, model in enumerate(models, 1):
-        model_name = os.path.basename(model)
-        console.print(f"{i}. [bold]{model_name}[/bold] ({model})")
-
-@cli.command()
-@click.option("--models-dir", default=DEFAULT_MODELS_DIR,
-              help=f"Directory containing model files (default: {DEFAULT_MODELS_DIR})")
-@click.option("--model", help="Specific model path to serve (skips selection)")
-def serve(models_dir, model):
-    """Serve a model using vLLM."""
+def serve_model(models_dir, model):
+    """Core function to serve a model using vLLM."""
     if not model:
         models = find_models(models_dir)
         
@@ -176,6 +151,40 @@ def serve(models_dir, model):
         except Exception as e:
             console.print(f"[red]Error running vLLM: {e}[/red]")
             sys.exit(1)
+
+@click.group(invoke_without_command=True)
+@click.pass_context
+@click.option("--models-dir", default=DEFAULT_MODELS_DIR,
+              help=f"Directory containing model files (default: {DEFAULT_MODELS_DIR})")
+def cli(ctx, models_dir):
+    """vLLM Serve CLI - Easily serve LLM models with vLLM."""
+    # If no subcommand was specified, run the default serve action
+    if ctx.invoked_subcommand is None:
+        serve_model(models_dir, None)
+
+@cli.command()
+@click.option("--models-dir", default=DEFAULT_MODELS_DIR, 
+              help=f"Directory containing model files (default: {DEFAULT_MODELS_DIR})")
+def list(models_dir):
+    """List available models in the models directory."""
+    models = find_models(models_dir)
+    
+    if not models:
+        console.print("[red]No models found in the specified directory.[/red]")
+        return
+    
+    console.print(f"[green]Found {len(models)} models in {models_dir}:[/green]")
+    for i, model in enumerate(models, 1):
+        model_name = os.path.basename(model)
+        console.print(f"{i}. [bold]{model_name}[/bold] ({model})")
+
+@cli.command()
+@click.option("--models-dir", default=DEFAULT_MODELS_DIR,
+              help=f"Directory containing model files (default: {DEFAULT_MODELS_DIR})")
+@click.option("--model", help="Specific model path to serve (skips selection)")
+def serve(models_dir, model):
+    """Serve a model using vLLM."""
+    serve_model(models_dir, model)
 
 if __name__ == "__main__":
     cli() 
