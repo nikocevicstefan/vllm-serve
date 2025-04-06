@@ -29,12 +29,21 @@ curl -sSL https://raw.githubusercontent.com/nikocevicstefan/vllm-serve/main/inst
 
 This will:
 1. Check if vLLM is installed
-2. Offer installation options:
+2. **Auto-detect your conda/virtual environment** and offer to install there (recommended)
+3. Offer installation options:
+   - Current conda/virtual environment (if detected)
    - User installation (in ~/.local/bin)
    - Global installation (in /usr/local/bin, requires sudo)
    - Custom location
-3. Download the script and make it executable
-4. Add the installation directory to your PATH if needed
+4. Download the script and make it executable
+5. Add the installation directory to your PATH if needed
+
+For conda environments, ensure your environment is activated before installation:
+
+```bash
+conda activate your-env-name
+curl -sSL https://raw.githubusercontent.com/nikocevicstefan/vllm-serve/main/install.sh | bash
+```
 
 For global installation (available to all users), you can run:
 
@@ -64,7 +73,7 @@ chmod +x vllm-serve.sh
 
 ### Quick Start
 
-If you've installed globally:
+If you've installed globally or in your active environment:
 
 ```bash
 vllm-serve
