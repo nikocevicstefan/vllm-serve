@@ -18,24 +18,8 @@ A user-friendly command-line tool to easily serve LLM models with [vLLM](https:/
 
 ## Installation
 
-### From PyPI (recommended)
-
 ```bash
 pip install vllm-serve-cli
-```
-
-### From GitHub
-
-```bash
-pip install git+https://github.com/nikocevicstefan/vllm-serve-cli.git
-```
-
-### From Source
-
-```bash
-git clone https://github.com/nikocevicstefan/vllm-serve-cli.git
-cd vllm-serve-cli
-pip install -e .
 ```
 
 ## Requirements
