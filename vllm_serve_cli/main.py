@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Optional, Any
 
 import click
+import questionary
 from rich.console import Console
 from rich.prompt import Prompt, IntPrompt, Confirm
 
@@ -18,6 +19,39 @@ DEFAULT_MODELS_DIR = os.path.expanduser("~/models")
 DEFAULT_PORT = 8000
 DEFAULT_HOST = "0.0.0.0"  # Listen on all interfaces
 DEFAULT_MAX_MODEL_LEN = 8192
+
+# Define preset configurations for common use cases
+PRESET_CONFIGS = {
+    "Default": {
+        "dtype": "auto",
+        "max_model_len": DEFAULT_MAX_MODEL_LEN,
+        "gpu_memory_utilization": 0.9,
+        "host": DEFAULT_HOST,
+        "port": DEFAULT_PORT,
+    },
+    "Low Memory": {
+        "dtype": "auto",
+        "max_model_len": 4096,
+        "gpu_memory_utilization": 0.8,
+        "host": DEFAULT_HOST,
+        "port": DEFAULT_PORT,
+    },
+    "High Performance": {
+        "dtype": "bfloat16",
+        "max_model_len": DEFAULT_MAX_MODEL_LEN,
+        "gpu_memory_utilization": 0.95,
+        "host": DEFAULT_HOST,
+        "port": DEFAULT_PORT,
+    },
+    "Quantized": {
+        "dtype": "auto",
+        "max_model_len": DEFAULT_MAX_MODEL_LEN,
+        "gpu_memory_utilization": 0.9,
+        "host": DEFAULT_HOST,
+        "port": DEFAULT_PORT,
+        "quantization": "awq",
+    }
+}
 
 def find_models(models_dir: str) -> List[str]:
     """Find model directories in the specified path."""
@@ -47,46 +81,229 @@ def find_models(models_dir: str) -> List[str]:
     return model_dirs
 
 def prompt_for_config() -> Dict[str, Any]:
-    """Prompt the user for vLLM configuration parameters."""
-    config = {}
+    """Prompt the user for vLLM configuration parameters with an interactive UI."""
+    
+    # Ask user if they want to use a preset or customize settings
+    config_type = questionary.select(
+        "Choose configuration type:",
+        choices=[
+            "Use a preset configuration",
+            "Customize all parameters manually"
+        ]
+    ).ask()
+    
+    if config_type.startswith("Use a preset"):
+        # Let user select from preset configs
+        preset_name = questionary.select(
+            "Select a preset configuration:",
+            choices=list(PRESET_CONFIGS.keys())
+        ).ask()
+        
+        config = PRESET_CONFIGS[preset_name].copy()
+        
+        # Show the selected config details
+        console.print(f"[green]Selected preset: [bold]{preset_name}[/bold][/green]")
+        for key, value in config.items():
+            console.print(f"  [blue]{key}[/blue]: {value}")
+        
+        # Ask if they want to customize any of the preset values
+        if questionary.confirm("Do you want to modify any of these settings?", default=False).ask():
+            config = customize_config(config)
+        
+        return config
+    else:
+        # Manual configuration from scratch
+        return customize_config({})
+
+def customize_config(base_config: Dict[str, Any]) -> Dict[str, Any]:
+    """Customize configuration parameters with questionary."""
+    config = base_config.copy()
     
     # Basic configuration
-    config["dtype"] = Prompt.ask(
-        "Data type for inference", 
-        choices=["auto", "float16", "bfloat16", "float32"], 
-        default="auto"
-    )
+    if "dtype" not in config:
+        config["dtype"] = questionary.select(
+            "Data type for inference:",
+            choices=["auto", "float16", "bfloat16", "float32"],
+            default="auto"
+        ).ask()
+    else:
+        config["dtype"] = questionary.select(
+            "Data type for inference:",
+            choices=["auto", "float16", "bfloat16", "float32"],
+            default=config["dtype"]
+        ).ask()
     
-    config["max_model_len"] = IntPrompt.ask(
-        "Maximum sequence length", 
-        default=DEFAULT_MAX_MODEL_LEN
-    )
+    # Max model length
+    if "max_model_len" not in config:
+        max_len_choices = ["2048", "4096", "8192", "16384", "32768", "Custom"]
+        max_len_choice = questionary.select(
+            "Maximum sequence length:",
+            choices=max_len_choices,
+            default="8192"
+        ).ask()
+        
+        if max_len_choice == "Custom":
+            config["max_model_len"] = int(questionary.text(
+                "Enter custom maximum sequence length:",
+                default=str(DEFAULT_MAX_MODEL_LEN)
+            ).ask())
+        else:
+            config["max_model_len"] = int(max_len_choice)
+    else:
+        max_len_choices = ["2048", "4096", "8192", "16384", "32768", "Custom"]
+        current_max_len = str(config["max_model_len"])
+        if current_max_len not in max_len_choices:
+            max_len_choices.append(current_max_len)
+            max_len_choices.remove("Custom")
+            max_len_choices.append("Custom")
+        
+        max_len_choice = questionary.select(
+            "Maximum sequence length:",
+            choices=max_len_choices,
+            default=current_max_len
+        ).ask()
+        
+        if max_len_choice == "Custom":
+            config["max_model_len"] = int(questionary.text(
+                "Enter custom maximum sequence length:",
+                default=str(config["max_model_len"])
+            ).ask())
+        else:
+            config["max_model_len"] = int(max_len_choice)
     
-    config["gpu_memory_utilization"] = float(Prompt.ask(
-        "GPU memory utilization (0.0-1.0)", 
-        default="0.9"
-    ))
+    # GPU memory utilization
+    if "gpu_memory_utilization" not in config:
+        utilization_choices = ["0.7", "0.8", "0.9", "0.95", "Custom"]
+        util_choice = questionary.select(
+            "GPU memory utilization (0.0-1.0):",
+            choices=utilization_choices,
+            default="0.9"
+        ).ask()
+        
+        if util_choice == "Custom":
+            config["gpu_memory_utilization"] = float(questionary.text(
+                "Enter custom GPU memory utilization:",
+                default="0.9"
+            ).ask())
+        else:
+            config["gpu_memory_utilization"] = float(util_choice)
+    else:
+        utilization_choices = ["0.7", "0.8", "0.9", "0.95", "Custom"]
+        current_util = str(config["gpu_memory_utilization"])
+        if current_util not in utilization_choices:
+            utilization_choices.append(current_util)
+            utilization_choices.remove("Custom")
+            utilization_choices.append("Custom")
+            
+        util_choice = questionary.select(
+            "GPU memory utilization (0.0-1.0):",
+            choices=utilization_choices,
+            default=current_util
+        ).ask()
+        
+        if util_choice == "Custom":
+            config["gpu_memory_utilization"] = float(questionary.text(
+                "Enter custom GPU memory utilization:",
+                default=str(config["gpu_memory_utilization"])
+            ).ask())
+        else:
+            config["gpu_memory_utilization"] = float(util_choice)
     
-    # Ask about tensor parallelism if they want to use it
-    if Confirm.ask("Use tensor parallelism (for multi-GPU setups)?", default=False):
-        config["tensor_parallel_size"] = IntPrompt.ask(
-            "Tensor parallel size (number of GPUs)", 
-            default=1
-        )
+    # Ask about tensor parallelism
+    if "tensor_parallel_size" not in config:
+        if questionary.confirm("Use tensor parallelism (for multi-GPU setups)?", default=False).ask():
+            tp_sizes = ["2", "4", "8", "Custom"]
+            tp_choice = questionary.select(
+                "Tensor parallel size (number of GPUs):",
+                choices=tp_sizes,
+                default="2"
+            ).ask()
+            
+            if tp_choice == "Custom":
+                config["tensor_parallel_size"] = int(questionary.text(
+                    "Enter custom tensor parallel size:",
+                    default="2"
+                ).ask())
+            else:
+                config["tensor_parallel_size"] = int(tp_choice)
     
     # Server configuration
-    config["host"] = Prompt.ask("Host to bind to", default=DEFAULT_HOST)
-    config["port"] = IntPrompt.ask("Port to listen on", default=DEFAULT_PORT)
+    if "host" not in config:
+        config["host"] = questionary.text(
+            "Host to bind to:", 
+            default=DEFAULT_HOST
+        ).ask()
+    else:
+        config["host"] = questionary.text(
+            "Host to bind to:", 
+            default=config["host"]
+        ).ask()
+    
+    if "port" not in config:
+        port_choices = ["8000", "8080", "5000", "3000", "Custom"]
+        port_choice = questionary.select(
+            "Port to listen on:",
+            choices=port_choices,
+            default="8000"
+        ).ask()
+        
+        if port_choice == "Custom":
+            config["port"] = int(questionary.text(
+                "Enter custom port:",
+                default=str(DEFAULT_PORT)
+            ).ask())
+        else:
+            config["port"] = int(port_choice)
+    else:
+        port_choices = ["8000", "8080", "5000", "3000", "Custom"]
+        current_port = str(config["port"])
+        if current_port not in port_choices:
+            port_choices.append(current_port)
+            port_choices.remove("Custom")
+            port_choices.append("Custom")
+            
+        port_choice = questionary.select(
+            "Port to listen on:",
+            choices=port_choices,
+            default=current_port
+        ).ask()
+        
+        if port_choice == "Custom":
+            config["port"] = int(questionary.text(
+                "Enter custom port:",
+                default=str(config["port"])
+            ).ask())
+        else:
+            config["port"] = int(port_choice)
     
     # Advanced options
-    if Confirm.ask("Configure advanced options?", default=False):
-        config["quantization"] = Prompt.ask(
-            "Quantization (empty for none)", 
-            default=""
-        )
+    if questionary.confirm("Configure advanced options?", default=False).ask():
+        # Quantization
+        quant_choices = ["none", "awq", "gptq", "sq", "Custom"]
+        current_quant = config.get("quantization", "none")
+        if current_quant not in quant_choices and current_quant != "none":
+            quant_choices.append(current_quant)
+            quant_choices.remove("Custom")
+            quant_choices.append("Custom")
+            
+        quant_choice = questionary.select(
+            "Quantization:",
+            choices=quant_choices,
+            default=current_quant if current_quant in quant_choices else "none"
+        ).ask()
         
-        # Only add non-empty quantization
-        if not config["quantization"]:
+        if quant_choice == "Custom":
+            quant_value = questionary.text(
+                "Enter custom quantization:",
+                default=current_quant if current_quant != "none" else ""
+            ).ask()
+            if quant_value and quant_value.lower() != "none":
+                config["quantization"] = quant_value
+            elif "quantization" in config:
+                del config["quantization"]
+        elif quant_choice.lower() != "none":
+            config["quantization"] = quant_choice
+        elif "quantization" in config:
             del config["quantization"]
     
     return config
@@ -114,22 +331,20 @@ def serve_model(models_dir, model):
             console.print("[red]No models found in the specified directory.[/red]")
             sys.exit(1)
         
-        console.print("[green]Available models:[/green]")
-        for i, model_path in enumerate(models, 1):
+        # Create a list of models with their names for selection
+        choices = []
+        for model_path in models:
             model_name = os.path.basename(model_path)
-            console.print(f"{i}. [bold]{model_name}[/bold] ({model_path})")
+            choices.append({
+                'name': f"{model_name} ({model_path})",
+                'value': model_path
+            })
         
-        selection = IntPrompt.ask(
-            "Select a model to serve (number)", 
-            default=1,
-            show_choices=False
-        )
-        
-        if selection < 1 or selection > len(models):
-            console.print("[red]Invalid selection.[/red]")
-            sys.exit(1)
-        
-        model = models[selection - 1]
+        console.print("[green]Select a model to serve:[/green]")
+        model = questionary.select(
+            "Choose a model:",
+            choices=choices
+        ).ask()
     
     # Get the user-defined configuration
     console.print(f"[green]Configuring vLLM to serve: [bold]{os.path.basename(model)}[/bold][/green]")
@@ -142,7 +357,7 @@ def serve_model(models_dir, model):
     console.print("[yellow]Will execute command:[/yellow]")
     console.print(" ".join(cmd))
     
-    if Confirm.ask("Do you want to proceed?", default=True):
+    if questionary.confirm("Do you want to proceed?", default=True).ask():
         try:
             # Execute vLLM
             subprocess.run(cmd)

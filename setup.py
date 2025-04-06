@@ -10,6 +10,7 @@ setup(
         "click>=8.1.3",
         "vllm>=0.8.0",
         "rich>=10.0.0",
+        "questionary>=1.10.0",
     ],
     entry_points={
         "console_scripts": [
